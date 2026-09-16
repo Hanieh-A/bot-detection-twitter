@@ -1,0 +1,23 @@
+{
+  "dataset": "dataset2_all_users_19510",
+  "total_users": 19510,
+  "labeled_users": 2028,
+  "bot_fraction": 0.46745562130177515,
+  "label_source_breakdown": {
+    "tagger": 1730,
+    "tagger+suspended": 158,
+    "tagger(human)+suspended_conflict": 129,
+    "suspended_only": 11
+  },
+  "RF_24feat_AUC": 0.6650413714326969,
+  "RF_extended_AUC": 0.7316556695236032,
+  "botometer_standalone_AUC": 0.5226641923696913,
+  "n_users_with_botometer_and_label": 1320,
+  "paper2_fusion_dataset2": {
+    "n_users_with_text": 1620,
+    "n_bots": 753,
+    "RF_Behavioral_AUC": 0.7402929319196263,
+    "RF_Linguistic_AUC": 0.6146516179060363,
+    "RF_Fusion_AUC": 0.738663064785029
+  }
+}
