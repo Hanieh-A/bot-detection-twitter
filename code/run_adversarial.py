@@ -55,13 +55,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, accuracy_score
 
 from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset import load_custom
+from load_custom_dataset_v2 import load_custom_v2 as load_custom
 from extra_features import engineer_extra_features, EXTRA_FEATURE_NAMES
 
 RNG = 42
 np.random.seed(RNG)
 
-XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "users_with_retweets.xlsx"
+XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results_custom")
 os.makedirs(OUT, exist_ok=True)

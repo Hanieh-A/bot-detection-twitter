@@ -41,7 +41,7 @@ from sklearn.metrics import (roc_auc_score, roc_curve, f1_score, precision_score
                              recall_score, accuracy_score)
 
 from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset import load_custom
+from load_custom_dataset_v2 import load_custom_v2 as load_custom
 from extra_features import engineer_extra_features, EXTRA_FEATURE_NAMES
 from persian_lfc import extract_persian_ling_features, LFC_FEATURE_NAMES
 from coordination_features import compute_coordination_features, COORD_FEATURE_NAMES
@@ -50,7 +50,7 @@ RNG = 42
 np.random.seed(RNG)
 N_SPLITS = 5
 
-XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "users_with_retweets.xlsx"
+XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results_custom")
 os.makedirs(OUT, exist_ok=True)
@@ -110,7 +110,8 @@ print(f"Linguistic features: {len(LFC_FEATURE_NAMES)} -> {LFC_FEATURE_NAMES}")
 # --- extract cross-account duplicate/coordination features ---
 print("\nExtracting coordination (cross-account duplicate content) features...")
 coord = compute_coordination_features(XLSX_PATH)
-coord_aligned = df_text[["id_str"]].merge(coord, left_on="id_str", right_index=True, how="left")
+df_text["_group_key"] = df_text["screen_name"].astype(str).str.strip().str.lower()
+coord_aligned = df_text[["_group_key"]].merge(coord, left_on="_group_key", right_index=True, how="left")
 X_coord = coord_aligned[COORD_FEATURE_NAMES].fillna(0.0).reset_index(drop=True)
 print(f"Coordination features: {COORD_FEATURE_NAMES}")
 print(f"Users with any coordination signal in this subset: {(X_coord['n_coordination_partners'] > 0).sum()}")

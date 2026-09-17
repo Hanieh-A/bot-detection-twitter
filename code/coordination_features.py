@@ -32,8 +32,9 @@ def _normalize(text):
     return t
 
 
-def compute_coordination_features(xlsx_path, min_text_len=15):
-    """Returns a DataFrame indexed by id_str (string) with:
+def compute_coordination_features(xlsx_path, min_text_len=15, sheet_name=None, group_col=None):
+    """Returns a DataFrame indexed by the grouping key (screen_name, lowercased,
+    for the dataset-1-v2 schema; id_str for the original schema) with:
       - n_sampled_tweets
       - n_duplicated_tweets       : tweets whose (normalized) text also
                                      appears under >=1 OTHER account
@@ -43,22 +44,41 @@ def compute_coordination_features(xlsx_path, min_text_len=15):
     Tweets shorter than min_text_len chars (after normalization) are
     excluded from duplicate-matching to avoid false positives on generic
     short replies ("سلام", "ok", etc.).
+
+    sheet_name / group_col let this work across both dataset-1 schemas:
+      - original file (users_with_retweets.xlsx): sheet "tweetsMetaData",
+        where the "id" column IS the user id -> group_col="id"
+      - enriched file (1000user_sheet.xlsx): sheet "tweets_meta_data",
+        where "id" is the TWEET id (not the user id) and tweets must be
+        grouped by "screen_name" instead.
+    If not given, both are auto-detected from the sheet names present.
     """
-    tw = pd.read_excel(xlsx_path, sheet_name="tweetsMetaData")
-    tw["id"] = tw["id"].astype(str)
+    if sheet_name is None:
+        xl = pd.ExcelFile(xlsx_path)
+        if "tweetsMetaData" in xl.sheet_names:
+            sheet_name, group_col = "tweetsMetaData", (group_col or "id")
+        elif "tweets_meta_data" in xl.sheet_names:
+            sheet_name, group_col = "tweets_meta_data", (group_col or "screen_name")
+        else:
+            raise ValueError("No known tweet-metadata sheet found in this file.")
+    group_col = group_col or "id"
+
+    tw = pd.read_excel(xlsx_path, sheet_name=sheet_name)
+    if group_col == "screen_name":
+        tw["group_key"] = tw["screen_name"].astype(str).str.strip().str.lower()
+    else:
+        tw["group_key"] = tw[group_col].astype(str)
     tw["norm"] = tw["text"].apply(_normalize)
     tw.loc[tw["norm"].str.len() < min_text_len, "norm"] = np.nan  # too short to trust
 
     valid = tw.dropna(subset=["norm"]).copy()
-    # groups of normalized text -> set of distinct user ids using it
-    text_to_users = valid.groupby("norm")["id"].agg(lambda s: set(s))
+    # groups of normalized text -> set of distinct user keys using it
+    text_to_users = valid.groupby("norm")["group_key"].agg(lambda s: set(s))
     dup_texts = text_to_users[text_to_users.apply(len) > 1]
     dup_text_set = set(dup_texts.index)
 
-    valid["is_dup"] = valid["norm"].isin(dup_text_set)
-
     rows = []
-    for uid, g in tw.groupby("id"):
+    for uid, g in tw.groupby("group_key"):
         n_tweets = len(g)
         g_valid = g.dropna(subset=["norm"])
         dup_mask = g_valid["norm"].isin(dup_text_set)
@@ -69,14 +89,14 @@ def compute_coordination_features(xlsx_path, min_text_len=15):
             partners |= (text_to_users[norm_text] - {uid})
 
         rows.append({
-            "id_str": uid,
+            "group_key": uid,
             "n_sampled_tweets": n_tweets,
             "n_duplicated_tweets": n_dup,
             "duplicate_tweet_ratio": n_dup / n_tweets if n_tweets else 0.0,
             "n_coordination_partners": len(partners),
         })
 
-    out = pd.DataFrame(rows).set_index("id_str")
+    out = pd.DataFrame(rows).set_index("group_key")
     return out
 
 
