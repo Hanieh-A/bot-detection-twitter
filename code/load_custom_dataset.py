@@ -14,7 +14,8 @@ import re
 import numpy as np
 import pandas as pd
 
-FINAL_LABEL_COL = "برچسب نهایی"  # authoritative resolved label, e.g. "bot(1)"
+# authoritative resolved label, e.g. "bot(1)"
+FINAL_LABEL_COL = "final-tag"
 
 
 def _parse_final_label(v):
@@ -40,13 +41,13 @@ def load_custom(xlsx_path, tweet_agg="concat", max_tweets_per_user=20):
     df : DataFrame in the schema features.py expects, with an extra
          'label_raw' column (1=bot,2=human,3=news agent,4=unverified) kept
          for reference, and 'bot' = binary target (1=bot, 0=all others),
-         only for rows where 'برچسب نهایی' resolved to a real class
+         only for rows where 'final-tag' resolved to a real class
          (i.e. not "can't find").
     """
     users = pd.read_excel(xlsx_path, sheet_name="users_with_retweets")
     tweets = pd.read_excel(xlsx_path, sheet_name="tweetsMetaData")
 
-    # ---- 1. label straight from the resolved "برچسب نهایی" column ----
+    # ---- 1. label straight from the resolved "final-tag" column ----
     users["label_raw"] = users[FINAL_LABEL_COL].apply(_parse_final_label)
     users["bot"] = (users["label_raw"] == 1).astype(float)
     users.loc[users["label_raw"].isna(), "bot"] = np.nan
@@ -89,7 +90,8 @@ def load_custom(xlsx_path, tweet_agg="concat", max_tweets_per_user=20):
         "listed_count": users["listed_count"],
         "statuses_count": users["status_count"],
         "favourites_count": users["favourites_count"],
-        "created_at": users["created_at"],        # ISO format, see features.py patch
+        # ISO format, see features.py patch
+        "created_at": users["created_at"],
         "verified": 0,                              # not collected -> assume 0
         "default_profile": users["default_profile"],
         "default_profile_image": 0,                 # not collected -> assume 0
@@ -110,5 +112,7 @@ if __name__ == "__main__":
     df = load_custom(path)
     print(df.shape)
     print(df["label_raw"].value_counts(dropna=False))
-    print(df.dropna(subset=["bot"]).shape, "rows with a resolved bot/non-bot label")
-    print((df["status"].str.len() > 0).sum(), "rows with at least one tweet of text")
+    print(df.dropna(subset=["bot"]).shape,
+          "rows with a resolved bot/non-bot label")
+    print((df["status"].str.len() > 0).sum(),
+          "rows with at least one tweet of text")

@@ -23,7 +23,7 @@ import re
 import numpy as np
 import pandas as pd
 
-FINAL_LABEL_COL = "برچسب نهایی"
+FINAL_LABEL_COL = "final-tag"
 
 EXTRA_RAW_COLS = [
     'tweet_frequency', 'retweet_ratio', 'mean_no_hashtags', 'mean_no_words',
@@ -60,8 +60,10 @@ def load_custom_v2(xlsx_path, max_tweets_per_user=20):
 
     # join on screen_name (lowercased) -- safe against numeric-id precision
     # loss, and this file's tweet sheet has near-universal screen_name coverage.
-    users["screen_name_norm"] = users["screen_name"].astype(str).str.strip().str.lower()
-    tweets["screen_name_norm"] = tweets["screen_name"].astype(str).str.strip().str.lower()
+    users["screen_name_norm"] = users["screen_name"].astype(
+        str).str.strip().str.lower()
+    tweets["screen_name_norm"] = tweets["screen_name"].astype(
+        str).str.strip().str.lower()
     tw_text = (
         tweets.groupby("screen_name_norm")["text"]
         .apply(lambda s: " ".join(str(x) for x in s.dropna().head(max_tweets_per_user).tolist()))
@@ -87,7 +89,8 @@ def load_custom_v2(xlsx_path, max_tweets_per_user=20):
         "created_at": users["created_at"],
         "verified": users["verified"],                     # real values now
         "default_profile": users["default_profile"],
-        "default_profile_image": users["default_profile_image"],  # real values now
+        # real values now
+        "default_profile_image": users["default_profile_image"],
         "status": users["status"],
         "bot": users["bot"],
         "label_raw": users["label_raw"],
@@ -104,6 +107,8 @@ if __name__ == "__main__":
     df = load_custom_v2(path)
     print(df.shape)
     print(df["label_raw"].value_counts(dropna=False))
-    print(df.dropna(subset=["bot"]).shape, "rows with a resolved bot/non-bot label")
-    print((df["status"].str.len() > 0).sum(), "rows with at least one tweet of text")
+    print(df.dropna(subset=["bot"]).shape,
+          "rows with a resolved bot/non-bot label")
+    print((df["status"].str.len() > 0).sum(),
+          "rows with at least one tweet of text")
     print(df["botometer_score"].notna().sum(), "rows with a Botometer score")
