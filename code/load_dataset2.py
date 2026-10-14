@@ -83,8 +83,10 @@ def load_dataset2(xlsx_path):
     suspended = pd.read_excel(xlsx_path, sheet_name="suspend_users")
 
     main["Bot_Probability_clean"] = main["Bot_Probability"].apply(_clean_prob)
-    main["bot"] = np.where(main["Bot_Probability_clean"].notna(), (main["Bot_Probability_clean"] >= 0.5).astype(float), np.nan)
-    main["label_source"] = np.where(main["Bot_Probability_clean"].notna(), "tagger", None)
+    main["bot"] = np.where(main["Bot_Probability_clean"].notna(
+    ), (main["Bot_Probability_clean"] >= 0.5).astype(float), np.nan)
+    main["label_source"] = np.where(
+        main["Bot_Probability_clean"].notna(), "tagger", None)
 
     # reinforce with suspended accounts (strong independent bot evidence);
     # never downgrades an existing human label, only fills in gaps or
@@ -135,10 +137,11 @@ def load_dataset2(xlsx_path):
 
 if __name__ == "__main__":
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else "all_users.xlsx"
+    path = sys.argv[1] if len(sys.argv) > 1 else "all_users_Customized.xlsx"
     df, extra_cols = load_dataset2(path)
     print(df.shape)
-    print("label_source counts:\n", df["label_source"].value_counts(dropna=False))
+    print("label_source counts:\n",
+          df["label_source"].value_counts(dropna=False))
     print("bot value counts:\n", df["bot"].value_counts(dropna=False))
     print("extra cols available:", extra_cols)
     print("botometer coverage:", df["botometer_score"].notna().sum())

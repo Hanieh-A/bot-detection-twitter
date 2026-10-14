@@ -65,10 +65,10 @@ def nested_cv_evaluate(X: pd.DataFrame, y, estimator, name: str, *, scale=False,
     X = X.reset_index(drop=True)
     y = np.asarray(y, dtype=int)
 
-    print("y shape:", y.shape)
-    print("y dtype:", y.dtype)
-    print("Unique labels:", np.unique(y, return_counts=True))
-    print("Number of classes:", len(np.unique(y)))
+    # print("y shape:", y.shape)
+    # print("y dtype:", y.dtype)
+    # print("Unique labels:", np.unique(y, return_counts=True))
+    # print("Number of classes:", len(np.unique(y)))
     
     if len(np.unique(y)) != 2:
         raise ValueError("Binary labels with both classes are required.")

@@ -5,9 +5,9 @@
   "users_with_tweet_text": 1086,
   "n_behavioral_features": 45,
   "n_content_features": 12,
-  "RF_Behavioral_AUC": 0.7561189233471842,
-  "RF_Behavioral_paper_only_AUC": 0.6523592319516232,
-  "GB_Behavioral_AUC": 0.756766452146887,
+  "RF_Behavioral_AUC": 0.779261068038242,
+  "RF_Behavioral_paper_only_AUC": 0.7018801518529779,
+  "GB_Behavioral_AUC": 0.7862043512043512,
   "RF_Content_subset_AUC": 0.7271514023539986,
-  "RF_Fusion_subset_AUC": 0.80140176197431
+  "RF_Fusion_subset_AUC": 0.8211182484453169
 }

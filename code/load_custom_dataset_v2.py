@@ -103,7 +103,8 @@ def load_custom_v2(xlsx_path, max_tweets_per_user=20):
 
 if __name__ == "__main__":
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
+    path = sys.argv[1] if len(
+        sys.argv) > 1 else "main_with_final_tag_Customized.xlsx"
     df = load_custom_v2(path)
     print(df.shape)
     print(df["label_raw"].value_counts(dropna=False))
