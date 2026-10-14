@@ -1,0 +1,65 @@
+{
+  "created_utc": "2026-10-14T08:02:08.024452+00:00",
+  "seed": 42,
+  "outer_splits": 5,
+  "inner_splits": 4,
+  "threshold_grid": [
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95
+  ],
+  "rf_params": {
+    "n_estimators": 300,
+    "random_state": 42,
+    "n_jobs": -1,
+    "class_weight": null
+  },
+  "python": "3.12.4 (tags/v3.12.4:8e8a4ba, Jun  6 2024, 19:30:16) [MSC v.1940 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "pandas": "2.3.2",
+  "numpy": "2.3.5",
+  "scikit_learn": "1.8.0",
+  "dataset_sha256": {
+    "d1": "17562c3857b482952f0985f90f51d2101662c27edda9f24ae86b106be29de56c",
+    "d2": "9b712edec89317455aa9a5e174cd843cde0274c77628700e0c4ec4c769e0b1db"
+  },
+  "audits": {
+    "dataset1": {
+      "required_columns_missing": [],
+      "rows": 1103,
+      "resolved_labels": 1089,
+      "duplicate_id_str": 0,
+      "duplicate_screen_name": 0,
+      "users_with_text": 1099
+    },
+    "dataset2": {
+      "required_columns_missing": [],
+      "rows": 19510,
+      "resolved_labels": 19510,
+      "label_source_counts": {
+        "tagger": 19212,
+        "tagger(human)+suspended_conflict": 256,
+        "tagger+suspended": 42
+      },
+      "duplicate_id_str": 0,
+      "duplicate_normalized_screen_name": 74
+    }
+  },
+  "legacy_results_note": "results_custom and results_dataset2 predate fold-local preprocessing; retain as historical outputs, not official corrected results."
+}

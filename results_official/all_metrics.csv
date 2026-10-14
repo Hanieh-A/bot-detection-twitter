@@ -1,0 +1,10 @@
+experiment,model,n,positive_rate,roc_auc_oof,average_precision_oof,accuracy_outer_mean,f1_outer_mean,precision_outer_mean,recall_outer_mean,roc_auc_outer_mean,roc_auc_outer_std,selected_threshold_median,evaluation,n_features
+D1-full-base,RF behavioral,1089,0.04775023,0.702572139,0.235749846,0.915511774,0.312764013,0.2775,0.383636364,0.701880152,0.095397783,0.2,nested stratified CV; preprocessing fit within each fold,24
+D1-full-base,LogReg behavioral,1089,0.04775023,0.72884059,0.244493683,0.932976789,0.303553366,0.314704185,0.327272727,0.731697409,0.087213808,0.2,nested stratified CV; preprocessing fit within each fold,24
+D1-full-extended,RF extended behavioral,1089,0.04775023,0.781581485,0.306460997,0.925633112,0.307245304,0.27887218,0.358181818,0.779261068,0.129615222,0.25,nested stratified CV; preprocessing fit within each fold,45
+D1-matched-text,RF behavioral (matched text subset),1086,0.047882136,0.808743119,0.307135093,0.923578404,0.276993758,0.287799564,0.334545455,0.820708435,0.118259361,0.2,nested stratified CV; preprocessing fit within each fold,45
+D1-matched-text,RF content (matched text subset),1086,0.047882136,0.751906338,0.138336972,0.852644485,0.187750249,0.131645164,0.407272727,0.75168191,0.082934889,0.15,nested stratified CV; preprocessing fit within each fold,12
+D1-matched-text,RF fusion (matched text subset),1086,0.047882136,0.809645142,0.30437891,0.917126792,0.330174292,0.286840121,0.450909091,0.819262272,0.094453618,0.2,nested stratified CV; preprocessing fit within each fold,57
+D2-full-base,RF behavioral,19510,0.127421835,0.945915028,0.677391216,0.899179908,0.666694319,0.577468895,0.789612373,0.945948756,0.006575316,0.35,nested stratified CV; preprocessing fit within each fold,24
+D2-full-extended,RF extended behavioral,19510,0.127421835,0.980841396,0.89414035,0.948385443,0.800696408,0.788079665,0.813748354,0.980788863,0.003565467,0.4,nested stratified CV; preprocessing fit within each fold,44
+D2-Botometer-diagnostic,Botometer raw score,12438,,0.454444455,,,,,,,,,diagnostic score; no model fitting,1

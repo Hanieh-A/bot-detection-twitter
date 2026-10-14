@@ -1,49 +1,13 @@
 {
   "total_users_in_file": 1103,
-  "labeled_users_majority_vote": 1045,
-  "bot_fraction": 0.17894736842105263,
-  "users_with_tweet_text": 1042,
+  "labeled_users_majority_vote": 1089,
+  "bot_fraction": 0.047750229568411386,
+  "users_with_tweet_text": 1086,
   "n_behavioral_features": 45,
   "n_content_features": 12,
-  "RF_Behavioral_AUC": 0.7624669989837806,
-  "RF_Behavioral_paper_only_AUC": 0.7041185955007381,
-  "GB_Behavioral_AUC": 0.7577607692082987,
-  "RF_Content_subset_AUC": 0.6483951815021425,
-  "RF_Fusion_subset_AUC": 0.7687538739321421,
-  "imbalance_handling": {
-    "best_config": "class_weight='balanced' + tuned thr (0.207)",
-    "best_threshold": 0.20666666666666667,
-    "baseline_f1": 0.27385892116182575,
-    "best_f1": 0.4691848906560636,
-    "baseline_recall": 0.17647058823529413,
-    "best_recall": 0.6310160427807486
-  },
-  "shap_interpretability": {
-    "top5_features_by_mean_abs_shap": [
-      "retweet_ratio",
-      "listed_per_follower",
-      "screen_name_digit_ratio",
-      "friends_to_followers",
-      "statuses_per_day"
-    ],
-    "model": "RF-Behavioral, 45 features, unweighted, threshold=0.39"
-  },
-  "adversarial_robustness": {
-    "population_n": 1042,
-    "auc_drop_severity_0_to_1": {
-      "RF-Content": 0.03081573096164536,
-      "RF-Behavioral": 0.0,
-      "RF-Fusion": 0.012923846581434084
-    },
-    "caveat": "Behavioral features are computed upstream of the sampled tweet text used for laundering, so their invariance here is partly a pipeline property, not purely an emergent empirical result."
-  },
-  "paper2_fusion": {
-    "n_users_with_text": 1042,
-    "n_bots": 187,
-    "n_linguistic_features": 19,
-    "RF_Behavioral_AUC": 0.7548767604169268,
-    "RF_Linguistic_AUC": 0.6615615615615617,
-    "RF_Fusion_AUC": 0.7631192133962218,
-    "note": "Linguistic features are a Persian-language adaptation (hazm-based) of the Trokhymovych et al. LFC idea, not their original lftk/spaCy pipeline or pretrained mBERT model, both of which are unavailable for Persian / this sandboxed environment respectively."
-  }
+  "RF_Behavioral_AUC": 0.7561189233471842,
+  "RF_Behavioral_paper_only_AUC": 0.6523592319516232,
+  "GB_Behavioral_AUC": 0.756766452146887,
+  "RF_Content_subset_AUC": 0.7271514023539986,
+  "RF_Fusion_subset_AUC": 0.80140176197431
 }
