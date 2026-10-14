@@ -34,7 +34,7 @@ from evaluation import nested_cv_evaluate
 from extra_features import EXTRA_FEATURE_NAMES, engineer_extra_features
 from extra_features_v2 import EXTRA_FEATURE_NAMES_V2, engineer_extra_features_v2
 from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset import load_custom
+from load_custom_dataset_v2 import load_custom_v2 as load_custom
 from load_dataset2 import load_dataset2
 from validation import audit_dataset1, audit_dataset2
 

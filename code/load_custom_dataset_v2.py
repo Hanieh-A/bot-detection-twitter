@@ -84,7 +84,7 @@ def load_custom_v2(xlsx_path, max_tweets_per_user=20):
         "followers_count": users["followers_count"],
         "friends_count": users["friends_count"],
         "listed_count": users["listed_count"],
-        "statuses_count": users["status_count"],
+        "statuses_count": users["statuses_count"],
         "favourites_count": users["favourites_count"],
         "created_at": users["created_at"],
         "verified": users["verified"],                     # real values now

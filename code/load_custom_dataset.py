@@ -16,6 +16,7 @@ import pandas as pd
 
 # authoritative resolved label, e.g. "bot(1)"
 FINAL_LABEL_COL = "final-tag"
+DATASET = "../datasets/main_with_final_tag_Customized.xlsx"
 
 
 def _parse_final_label(v):
@@ -44,8 +45,8 @@ def load_custom(xlsx_path, tweet_agg="concat", max_tweets_per_user=20):
          only for rows where 'final-tag' resolved to a real class
          (i.e. not "can't find").
     """
-    users = pd.read_excel(xlsx_path, sheet_name="users_with_retweets")
-    tweets = pd.read_excel(xlsx_path, sheet_name="tweetsMetaData")
+    users = pd.read_excel(xlsx_path, sheet_name="1k_users")
+    tweets = pd.read_excel(xlsx_path, sheet_name="tweets_meta_data")
 
     # ---- 1. label straight from the resolved "final-tag" column ----
     users["label_raw"] = users[FINAL_LABEL_COL].apply(_parse_final_label)
@@ -108,7 +109,7 @@ def load_custom(xlsx_path, tweet_agg="concat", max_tweets_per_user=20):
 
 if __name__ == "__main__":
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else "users_with_retweets.xlsx"
+    path = sys.argv[1] if len(sys.argv) > 1 else DATASET
     df = load_custom(path)
     print(df.shape)
     print(df["label_raw"].value_counts(dropna=False))
