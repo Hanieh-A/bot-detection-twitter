@@ -82,9 +82,9 @@ def load_dataset2(xlsx_path):
     main = pd.read_excel(xlsx_path, sheet_name="main")
     suspended = pd.read_excel(xlsx_path, sheet_name="suspend_users")
 
-    main["prob1_clean"] = main["prob1"].apply(_clean_prob)
-    main["bot"] = np.where(main["prob1_clean"].notna(), (main["prob1_clean"] >= 0.5).astype(float), np.nan)
-    main["label_source"] = np.where(main["prob1_clean"].notna(), "tagger", None)
+    main["Bot_Probability_clean"] = main["Bot_Probability"].apply(_clean_prob)
+    main["bot"] = np.where(main["Bot_Probability_clean"].notna(), (main["Bot_Probability_clean"] >= 0.5).astype(float), np.nan)
+    main["label_source"] = np.where(main["Bot_Probability_clean"].notna(), "tagger", None)
 
     # reinforce with suspended accounts (strong independent bot evidence);
     # never downgrades an existing human label, only fills in gaps or
@@ -106,7 +106,7 @@ def load_dataset2(xlsx_path):
     main["botometer_score"] = main["Botometer Score"].apply(_clean_botometer)
 
     out = pd.DataFrame({
-        "id_str": main["id"].astype(str),
+        "id_str": main["user_id"].astype(str),
         "screen_name": main["screen_name"],
         "name": main["name"],
         "description": main["clean_description"],
