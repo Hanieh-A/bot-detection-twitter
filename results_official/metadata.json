@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-10-14T08:02:08.024452+00:00",
+  "created_utc": "2026-10-15T09:54:49.485436+00:00",
   "seed": 42,
   "outer_splits": 5,
   "inner_splits": 4,
@@ -36,8 +36,8 @@
   "numpy": "2.3.5",
   "scikit_learn": "1.8.0",
   "dataset_sha256": {
-    "d1": "17562c3857b482952f0985f90f51d2101662c27edda9f24ae86b106be29de56c",
-    "d2": "9b712edec89317455aa9a5e174cd843cde0274c77628700e0c4ec4c769e0b1db"
+    "d1": "5630ae27dc9edf58e02a98db69f07aa022262b094e7437a9a127f0ac63c239cd",
+    "d2": "4802c96e5bcd9ae1353a61fd2e861b71b5a220322b2d6e8dd4be92ce991f1263"
   },
   "audits": {
     "dataset1": {
@@ -47,18 +47,6 @@
       "duplicate_id_str": 0,
       "duplicate_screen_name": 0,
       "users_with_text": 1099
-    },
-    "dataset2": {
-      "required_columns_missing": [],
-      "rows": 19510,
-      "resolved_labels": 19510,
-      "label_source_counts": {
-        "tagger": 19212,
-        "tagger(human)+suspended_conflict": 256,
-        "tagger+suspended": 42
-      },
-      "duplicate_id_str": 0,
-      "duplicate_normalized_screen_name": 74
     }
   },
   "legacy_results_note": "results_custom and results_dataset2 predate fold-local preprocessing; retain as historical outputs, not official corrected results."
