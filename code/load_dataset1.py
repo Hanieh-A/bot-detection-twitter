@@ -1,5 +1,5 @@
 """
-load_custom_dataset_v2.py
+load_dataset1.py
 ---------------------------
 Adapter for the ENRICHED version of dataset 1 (1000user_sheet.xlsx),
 which supersedes the original users_with_retweets.xlsx. Same underlying
@@ -16,7 +16,7 @@ population (~1103 vs 1104 users, same label distribution) but with:
     available for future feature engineering.
 
 Usage:
-    from load_custom_dataset_v2 import load_custom_v2
+    from load_dataset1 import load_custom_v2
     df = load_custom_v2("/path/to/1000user_sheet.xlsx")
 """
 import re
@@ -104,7 +104,7 @@ def load_custom_v2(xlsx_path, max_tweets_per_user=20):
 if __name__ == "__main__":
     import sys
     path = sys.argv[1] if len(
-        sys.argv) > 1 else "main_with_final_tag_Customized.xlsx"
+        sys.argv) > 1 else "dataset1.xlsx"
     df = load_custom_v2(path)
     print(df.shape)
     print(df["label_raw"].value_counts(dropna=False))

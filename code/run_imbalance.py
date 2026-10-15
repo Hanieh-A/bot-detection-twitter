@@ -13,34 +13,34 @@ Roadmap step 1: class-imbalance handling for the RF-Behavioral model
   5. Combined (recommended) -- class_weight='balanced' + tuned threshold
 
 All experiments reuse the exact same 45-feature matrix and 5-fold CV split
-(same random_state) as run_analysis_custom.py, so results are directly
+(same random_state) as run_analysis_dataset1.py, so results are directly
 comparable to Table 2 in the thesis-progress report.
 
 Usage:
     python3 run_imbalance.py /path/to/users_with_retweets.xlsx
 """
+from datetime import datetime, timezone
+from extra_features_d1 import engineer_extra_features, EXTRA_FEATURE_NAMES
+from load_dataset1 import load_custom_v2 as load_custom
+from features import engineer_all, engineer_behavioral_features
+from imblearn.over_sampling import SMOTE
+from sklearn.metrics import (roc_auc_score, precision_recall_curve, f1_score,
+                             precision_score, recall_score, accuracy_score)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import StratifiedKFold
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib
+import pandas as pd
+import numpy as np
 import os
 import sys
 import json
 import warnings
 warnings.filterwarnings('ignore')
 
-import numpy as np
-import pandas as pd
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-from sklearn.model_selection import StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (roc_auc_score, precision_recall_curve, f1_score,
-                             precision_score, recall_score, accuracy_score)
-from imblearn.over_sampling import SMOTE
-
-from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset_v2 import load_custom_v2 as load_custom
-from extra_features import engineer_extra_features, EXTRA_FEATURE_NAMES
 
 RNG = 42
 np.random.seed(RNG)
@@ -48,9 +48,8 @@ N_SPLITS = 5
 
 XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "results_custom")
+OUT = os.path.join(ROOT, "results_legacy_d1")
 os.makedirs(OUT, exist_ok=True)
-from datetime import datetime, timezone
 REF_DATE = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
 
@@ -97,11 +96,13 @@ df_labeled = df_raw.dropna(subset=["bot"]).copy()
 df_labeled["bot"] = df_labeled["bot"].astype(int)
 
 X_all, behav_cols, content_cols = engineer_all(df_labeled)
-X_all = engineer_behavioral_features(df_labeled, ref_date=REF_DATE).join(X_all[content_cols])
+X_all = engineer_behavioral_features(
+    df_labeled, ref_date=REF_DATE).join(X_all[content_cols])
 X_extra = engineer_extra_features(df_labeled)
 X_all = X_all.join(X_extra)
 behav_cols = behav_cols + EXTRA_FEATURE_NAMES
-X_all = X_all.replace([np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
+X_all = X_all.replace(
+    [np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
 
 X = X_all[behav_cols].values
 y = df_labeled["bot"].values
@@ -112,14 +113,16 @@ print(f"n={len(y)}, bot fraction={y.mean():.3f}, n_features={X.shape[1]}")
 # ============================================================
 oof_base = get_oof_probas(X, y, lambda: RandomForestClassifier(
     n_estimators=300, random_state=RNG, n_jobs=-1))
-row_baseline = {'config': 'Baseline (unweighted, thr=0.5)', **metrics_at_threshold(y, oof_base, 0.5)}
+row_baseline = {
+    'config': 'Baseline (unweighted, thr=0.5)', **metrics_at_threshold(y, oof_base, 0.5)}
 
 # ============================================================
 # 2. class_weight='balanced' -- threshold 0.5
 # ============================================================
 oof_cw = get_oof_probas(X, y, lambda: RandomForestClassifier(
     n_estimators=300, random_state=RNG, n_jobs=-1, class_weight='balanced'))
-row_cw = {'config': "class_weight='balanced' (thr=0.5)", **metrics_at_threshold(y, oof_cw, 0.5)}
+row_cw = {
+    'config': "class_weight='balanced' (thr=0.5)", **metrics_at_threshold(y, oof_cw, 0.5)}
 
 # ============================================================
 # 3. Threshold tuning on the UNWEIGHTED model's OOF probabilities
@@ -133,7 +136,8 @@ row_thr = {'config': f'Threshold tuning (unweighted, thr={tuned_thr:.3f})',
 # ============================================================
 oof_smote = get_oof_probas(X, y, lambda: RandomForestClassifier(
     n_estimators=300, random_state=RNG, n_jobs=-1), use_smote=True)
-row_smote = {'config': 'SMOTE oversampling (thr=0.5)', **metrics_at_threshold(y, oof_smote, 0.5)}
+row_smote = {
+    'config': 'SMOTE oversampling (thr=0.5)', **metrics_at_threshold(y, oof_smote, 0.5)}
 
 # ============================================================
 # 5. Combined (recommended): class_weight='balanced' + tuned threshold
@@ -143,9 +147,11 @@ row_combined = {'config': f"class_weight='balanced' + tuned thr ({tuned_thr_cw:.
                 **metrics_at_threshold(y, oof_cw, tuned_thr_cw)}
 
 table3 = pd.DataFrame([row_baseline, row_cw, row_thr, row_smote, row_combined])
-table3 = table3[['config', 'threshold', 'accuracy', 'f1', 'precision', 'recall', 'roc_auc']]
+table3 = table3[['config', 'threshold', 'accuracy',
+                 'f1', 'precision', 'recall', 'roc_auc']]
 best_row = table3.loc[table3['f1'].idxmax()].copy()
-table3['config'] = table3['config'].str.replace(' [RECOMMENDED]', '', regex=False)
+table3['config'] = table3['config'].str.replace(
+    ' [RECOMMENDED]', '', regex=False)
 table3.loc[table3['f1'].idxmax(), 'config'] += '  <-- BEST F1'
 table3.to_csv(f'{OUT}/table3_imbalance_handling.csv', index=False)
 print("\nTable 3 -- class imbalance handling comparison:")
@@ -159,19 +165,25 @@ fig, ax = plt.subplots(figsize=(7, 6))
 for probs, name in [(oof_base, 'Unweighted'), (oof_cw, "class_weight='balanced'"), (oof_smote, 'SMOTE')]:
     prec, rec, _ = precision_recall_curve(y, probs)
     ax.plot(rec, prec, lw=2, label=name)
-ax.axhline(y.mean(), color='gray', ls='--', alpha=0.5, label=f'Chance (bot rate={y.mean():.2f})')
-ax.set_xlabel('Recall'); ax.set_ylabel('Precision')
-ax.set_title('Precision-Recall curves -- imbalance handling comparison', fontweight='bold')
+ax.axhline(y.mean(), color='gray', ls='--', alpha=0.5,
+           label=f'Chance (bot rate={y.mean():.2f})')
+ax.set_xlabel('Recall')
+ax.set_ylabel('Precision')
+ax.set_title(
+    'Precision-Recall curves -- imbalance handling comparison', fontweight='bold')
 ax.legend(loc='upper right')
 plt.tight_layout()
-plt.savefig(f'{OUT}/fig5_precision_recall_curves.png', dpi=150, bbox_inches='tight')
+plt.savefig(f'{OUT}/fig5_precision_recall_curves.png',
+            dpi=150, bbox_inches='tight')
 plt.close()
 
 print(f"\nBest F1 config: {best_row['config']}")
 print(f"  threshold={best_row['threshold']:.3f}  F1={best_row['f1']:.3f}  "
       f"precision={best_row['precision']:.3f}  recall={best_row['recall']:.3f}")
-print(f"  -> F1 improves from {row_baseline['f1']:.3f} (baseline) to {best_row['f1']:.3f}")
-print(f"  -> Recall improves from {row_baseline['recall']:.3f} to {best_row['recall']:.3f}")
+print(
+    f"  -> F1 improves from {row_baseline['f1']:.3f} (baseline) to {best_row['f1']:.3f}")
+print(
+    f"  -> Recall improves from {row_baseline['recall']:.3f} to {best_row['recall']:.3f}")
 
 summary_path = f'{OUT}/summary.json'
 if os.path.exists(summary_path):

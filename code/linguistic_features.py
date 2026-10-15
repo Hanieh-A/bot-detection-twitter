@@ -1,5 +1,5 @@
 """
-persian_lfc.py
+linguistic_features.py
 --------------
 Persian-language adaptation of the "LFC" (Linguistic Features Classifier)
 idea from Trokhymovych et al. (2026) -- their original module uses
@@ -28,7 +28,7 @@ IMPORTANT ADAPTATION NOTE (state this plainly in the thesis):
     used instead.
 
 Usage:
-    from persian_lfc import extract_persian_ling_features
+    from linguistic_features import extract_persian_ling_features
     feat_df = extract_persian_ling_features(list_of_texts)
 """
 import re
@@ -39,9 +39,10 @@ import pandas as pd
 import hazm
 
 _normalizer = hazm.Normalizer()
-_tokenizer = hazm.WordTokenizer()  # reused instance -- hazm.word_tokenize() re-loads
-                                     # its word/verb lexicon files from disk on every
-                                     # call, which is ~1000x slower at scale.
+# reused instance -- hazm.word_tokenize() re-loads
+_tokenizer = hazm.WordTokenizer()
+# its word/verb lexicon files from disk on every
+# call, which is ~1000x slower at scale.
 _stopwords = set(hazm.stopwords_list())
 
 _PERSIAN_CHAR_RE = re.compile(r'[\u0600-\u06FF]')
@@ -79,7 +80,8 @@ def _features_for_text(text):
     avg_word_len = np.mean([len(w) for w in words_alpha]) if n_words else 0.0
     avg_sent_len_words = n_words / n_sent
 
-    stop_ratio = (sum(1 for w in words_alpha if w in _stopwords) / n_words) if n_words else 0.0
+    stop_ratio = (sum(1 for w in words_alpha if w in _stopwords) /
+                  n_words) if n_words else 0.0
 
     persian_chars = len(_PERSIAN_CHAR_RE.findall(raw))
     latin_chars = len(_LATIN_CHAR_RE.findall(raw))

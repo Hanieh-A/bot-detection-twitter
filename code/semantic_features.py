@@ -24,8 +24,10 @@ def _text(value) -> str:
 
 def build_semantic_texts(df: pd.DataFrame) -> list[str]:
     """Combine each account's profile description and sampled status text."""
-    descriptions = df["description"] if "description" in df.columns else pd.Series("", index=df.index)
-    statuses = df["status"] if "status" in df.columns else pd.Series("", index=df.index)
+    descriptions = df["description"] if "description" in df.columns else pd.Series(
+        "", index=df.index)
+    statuses = df["status"] if "status" in df.columns else pd.Series(
+        "", index=df.index)
 
     texts = []
     for description, status in zip(descriptions, statuses):
@@ -55,7 +57,7 @@ def engineer_semantic_features(
 ) -> pd.DataFrame:
     """Return one 384-dimensional embedding per row, with disk caching.
 
-    The pretrained encoder is frozen; no model is fitted on evaluation labels.
+    The pretrained encoder is frozen; no model is fitted on nested_cv labels.
     Cache keys include model name and ordered input texts.
     """
     try:

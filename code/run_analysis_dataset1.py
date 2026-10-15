@@ -1,14 +1,14 @@
 """
-run_analysis_custom.py
+run_analysis_dataset1.py
 -----------------------
 Same pipeline as run_analysis.py (Katyal 2026), but pointed at the
 student's own labeled dataset (users_with_retweets.xlsx) instead of the
 jubins/MachineLearning-Detecting-Twitter-Bots CSV.
 
 Usage:
-    python3 run_analysis_custom.py /path/to/users_with_retweets.xlsx
+    python3 run_analysis_dataset1.py /path/to/users_with_retweets.xlsx
 
-Produces (in ../results_custom/):
+Produces (in ../results_legacy_d1/):
   - table1_descriptive_stats.csv
   - table2_classifier_performance.csv   <- behavioral vs content vs fusion
   - table4_feature_importance.csv
@@ -29,38 +29,37 @@ Notes on adaptation from the original paper:
     account-creation date in the data) instead of the original paper's
     2018-01-01.
 """
+from extra_features_d1 import engineer_extra_features, EXTRA_FEATURE_NAMES
+from load_dataset1 import load_custom_v2 as load_custom
+from features import engineer_all, engineer_behavioral_features
+from sklearn.metrics import (roc_auc_score, roc_curve, f1_score, precision_score,
+                             recall_score, accuracy_score)
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.model_selection import StratifiedKFold
+from datetime import datetime, timezone
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib
+import pandas as pd
+import numpy as np
 import os
 import sys
 import json
 import warnings
 warnings.filterwarnings('ignore')
 
-import numpy as np
-import pandas as pd
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
-from datetime import datetime, timezone
 
-from sklearn.model_selection import StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import (roc_auc_score, roc_curve, f1_score, precision_score,
-                             recall_score, accuracy_score)
-
-from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset_v2 import load_custom_v2 as load_custom
-from extra_features import engineer_extra_features, EXTRA_FEATURE_NAMES
 
 RNG = 42
 np.random.seed(RNG)
-DATASET = "../datasets/main_with_final_tag_Customized.xlsx"
+DATASET = "../datasets/dataset1.xlsx"
 
 XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else DATASET
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "results_custom")
+OUT = os.path.join(ROOT, "results_legacy_d1")
 os.makedirs(OUT, exist_ok=True)
 REF_DATE = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
@@ -106,11 +105,13 @@ X_all, behav_cols, content_cols = engineer_all(df_labeled)
 X_all = engineer_behavioral_features(df_labeled, ref_date=REF_DATE).join(
     X_all[content_cols]
 )
-original_behav_cols = list(behav_cols)  # the 24 features from the paper, kept for A/B comparison
+# the 24 features from the paper, kept for A/B comparison
+original_behav_cols = list(behav_cols)
 X_extra = engineer_extra_features(df_labeled)
 X_all = X_all.join(X_extra)
 behav_cols = behav_cols + EXTRA_FEATURE_NAMES  # extended behavioral feature set
-X_all = X_all.replace([np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
+X_all = X_all.replace(
+    [np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
 y = df_labeled["bot"].values
 
 print(f"\nBehavioral features ({len(behav_cols)}): {behav_cols}")
@@ -152,20 +153,26 @@ oof_probas = {}
 # --- A/B check: original 24 paper features vs extended feature set ---
 X_orig = X_all[original_behav_cols].values
 res, _ = cv_evaluate(X_orig, y, RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1),
-                      f'RF-Behavioral (paper, {len(original_behav_cols)} feats)')
+                     f'RF-Behavioral (paper, {len(original_behav_cols)} feats)')
 results.append(res)
 
 res, probas = cv_evaluate(X_behav, y, RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1),
-                           f'RF-Behavioral (extended, {len(behav_cols)} feats)')
-results.append(res); oof_probas['RF-Behavioral'] = probas
+                          f'RF-Behavioral (extended, {len(behav_cols)} feats)')
+results.append(res)
+oof_probas['RF-Behavioral'] = probas
 
-res, probas = cv_evaluate(Xb_s, y, LogisticRegression(max_iter=2000, random_state=RNG), 'LogReg-Behavioral')
-results.append(res); oof_probas['LogReg-Behavioral'] = probas
+res, probas = cv_evaluate(Xb_s, y, LogisticRegression(
+    max_iter=2000, random_state=RNG), 'LogReg-Behavioral')
+results.append(res)
+oof_probas['LogReg-Behavioral'] = probas
 
-rf_behav_full = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1).fit(X_behav, y)
+rf_behav_full = RandomForestClassifier(
+    n_estimators=300, random_state=RNG, n_jobs=-1).fit(X_behav, y)
 
-res, probas = cv_evaluate(X_behav, y, GradientBoostingClassifier(n_estimators=200, random_state=RNG), 'GB-Behavioral')
-results.append(res); oof_probas['GB-Behavioral'] = probas
+res, probas = cv_evaluate(X_behav, y, GradientBoostingClassifier(
+    n_estimators=200, random_state=RNG), 'GB-Behavioral')
+results.append(res)
+oof_probas['GB-Behavioral'] = probas
 
 # ============================================================
 # CONTENT + FUSION: only on users that actually have tweet text
@@ -180,16 +187,19 @@ if has_text.sum() >= 30 and y[has_text.values].sum() >= 5 and (~y[has_text.value
     y_sub = y[idx]
 
     res, probas = cv_evaluate(X_content_sub, y_sub,
-                               RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1),
-                               'RF-Content (text subset)', n_splits=3)
+                              RandomForestClassifier(
+                                  n_estimators=300, random_state=RNG, n_jobs=-1),
+                              'RF-Content (text subset)', n_splits=3)
     results.append(res)
 
     res, probas = cv_evaluate(X_full_sub, y_sub,
-                               RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1),
-                               'RF-Fusion (text subset)', n_splits=3)
+                              RandomForestClassifier(
+                                  n_estimators=300, random_state=RNG, n_jobs=-1),
+                              'RF-Fusion (text subset)', n_splits=3)
     results.append(res)
 
-    rf_fusion_clf = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1).fit(X_full_sub, y_sub)
+    rf_fusion_clf = RandomForestClassifier(
+        n_estimators=300, random_state=RNG, n_jobs=-1).fit(X_full_sub, y_sub)
     feat_names_fusion = behav_cols + content_cols
 else:
     print("Not enough labeled users with tweet text for a reliable content/fusion "
@@ -219,7 +229,7 @@ sns.set_style("whitegrid")
 plt.rcParams.update({'font.size': 10, 'figure.dpi': 130})
 
 key_feats = [f for f in ['statuses_per_day', 'friends_to_followers', 'log_followers',
-                          'screen_name_digit_ratio', 'has_description', 'account_age_days']
+                         'screen_name_digit_ratio', 'has_description', 'account_age_days']
              if f in X_all.columns]
 fig, axes = plt.subplots(2, 3, figsize=(13, 7.5))
 for ax, f in zip(axes.flatten(), key_feats):
@@ -231,12 +241,18 @@ for ax, f in zip(axes.flatten(), key_feats):
     else:
         xl = f
     bins = np.linspace(min(h.min(), b.min()), max(h.max(), b.max()), 40)
-    ax.hist(h, bins=bins, alpha=0.55, label='Non-bot', density=True, color='#2b8cbe')
-    ax.hist(b, bins=bins, alpha=0.55, label='Bot', density=True, color='#e34a33')
-    ax.set_xlabel(xl); ax.set_ylabel('Density'); ax.legend(fontsize=8)
-fig.suptitle('Feature distributions by class -- custom dataset', fontsize=11, fontweight='bold')
+    ax.hist(h, bins=bins, alpha=0.55, label='Non-bot',
+            density=True, color='#2b8cbe')
+    ax.hist(b, bins=bins, alpha=0.55, label='Bot',
+            density=True, color='#e34a33')
+    ax.set_xlabel(xl)
+    ax.set_ylabel('Density')
+    ax.legend(fontsize=8)
+fig.suptitle('Feature distributions by class -- custom dataset',
+             fontsize=11, fontweight='bold')
 plt.tight_layout()
-plt.savefig(f'{OUT}/fig1_feature_distributions.png', dpi=150, bbox_inches='tight')
+plt.savefig(f'{OUT}/fig1_feature_distributions.png',
+            dpi=150, bbox_inches='tight')
 plt.close()
 
 fig, ax = plt.subplots(figsize=(7, 6))
@@ -245,9 +261,12 @@ for name in oof_probas:
     auc = roc_auc_score(y, oof_probas[name])
     ax.plot(fpr, tpr, lw=2, label=f'{name} (AUC = {auc:.3f})')
 ax.plot([0, 1], [0, 1], 'k--', alpha=0.4, label='Chance')
-ax.set_xlabel('False Positive Rate'); ax.set_ylabel('True Positive Rate')
+ax.set_xlabel('False Positive Rate')
+ax.set_ylabel('True Positive Rate')
 ax.set_title('ROC curves -- 5-fold CV, custom dataset', fontweight='bold')
-ax.legend(loc='lower right'); ax.set_xlim(0, 1); ax.set_ylim(0, 1.02)
+ax.legend(loc='lower right')
+ax.set_xlim(0, 1)
+ax.set_ylim(0, 1.02)
 plt.tight_layout()
 plt.savefig(f'{OUT}/fig2_roc_curves.png', dpi=150, bbox_inches='tight')
 plt.close()
@@ -276,8 +295,10 @@ summary = {
     'GB_Behavioral_AUC': float(table2.loc[table2['model'] == 'GB-Behavioral', 'roc_auc_mean'].iloc[0]),
 }
 if rf_fusion_clf is not None:
-    summary['RF_Content_subset_AUC'] = float(table2.loc[table2['model'] == 'RF-Content (text subset)', 'roc_auc_mean'].iloc[0])
-    summary['RF_Fusion_subset_AUC'] = float(table2.loc[table2['model'] == 'RF-Fusion (text subset)', 'roc_auc_mean'].iloc[0])
+    summary['RF_Content_subset_AUC'] = float(
+        table2.loc[table2['model'] == 'RF-Content (text subset)', 'roc_auc_mean'].iloc[0])
+    summary['RF_Fusion_subset_AUC'] = float(
+        table2.loc[table2['model'] == 'RF-Fusion (text subset)', 'roc_auc_mean'].iloc[0])
 
 with open(f'{OUT}/summary.json', 'w') as f:
     json.dump(summary, f, indent=2)

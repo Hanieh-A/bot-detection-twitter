@@ -1,5 +1,5 @@
 """
-run_cross_dataset_generalization.py
+run_cross_dataset.py
 --------------------------------------
 Tests whether the behavioral model generalizes ACROSS the two independent
 datasets, or whether it has just learned quirks specific to one bot
@@ -13,7 +13,7 @@ comparison is apples-to-apples:
   - The original 24 behavioral features (paper 1), computed by the same
     features.py::engineer_behavioral_features in both cases.
   - A common subset of the "extra" engineered features that exist in both
-    extra_features.py (dataset 1) and extra_features_v2.py (dataset 2):
+    extra_features_d1.py (dataset 1) and extra_features_d2.py (dataset 2):
     everything except dataset 1's 'tweeted_on_creation_day_or_week' flag
     (not available in dataset 2) and with retweet_ratio (dataset 1) /
     retweet_ratio_approx (dataset 2) aligned under one shared name.
@@ -22,26 +22,25 @@ As a within-dataset reference point, the usual 5-fold CV AUC for each
 dataset (from earlier scripts) is also reported alongside.
 
 Usage:
-    python3 run_cross_dataset_generalization.py \
+    python3 run_cross_dataset.py \
         /path/to/users_with_retweets.xlsx /path/to/all_users.xlsx
 """
+from extra_features_d2 import engineer_extra_features_d2
+from load_dataset2 import load_dataset2
+from extra_features_d1 import engineer_extra_features
+from load_dataset1 import load_custom_v2 as load_custom
+from features import engineer_behavioral_features
+from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from datetime import datetime, timezone
+import pandas as pd
+import numpy as np
 import os
 import sys
 import json
 import warnings
 warnings.filterwarnings('ignore')
 
-import numpy as np
-import pandas as pd
-from datetime import datetime, timezone
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, accuracy_score
-
-from features import engineer_behavioral_features
-from load_custom_dataset_v2 import load_custom_v2 as load_custom
-from extra_features import engineer_extra_features
-from load_dataset2 import load_dataset2
-from extra_features_v2 import engineer_extra_features_v2
 
 RNG = 42
 np.random.seed(RNG)
@@ -49,8 +48,8 @@ np.random.seed(RNG)
 XLSX1 = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
 XLSX2 = sys.argv[2] if len(sys.argv) > 2 else "all_users.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT1 = os.path.join(ROOT, "results_custom")
-OUT2 = os.path.join(ROOT, "results_dataset2")
+OUT1 = os.path.join(ROOT, "results_legacy_d1")
+OUT2 = os.path.join(ROOT, "results_legacy_d2")
 os.makedirs(OUT1, exist_ok=True)
 os.makedirs(OUT2, exist_ok=True)
 
@@ -72,12 +71,14 @@ def build_dataset1_matrix():
     df["bot"] = df["bot"].astype(int)
     ref_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
     X24 = engineer_behavioral_features(df, ref_date=ref_date)
-    Xe = engineer_extra_features(df).rename(columns={'retweet_ratio': 'retweet_ratio'})
-    # dataset 1's extra_features.py already outputs a column literally named
+    Xe = engineer_extra_features(df).rename(
+        columns={'retweet_ratio': 'retweet_ratio'})
+    # dataset 1's extra_features_d1.py already outputs a column literally named
     # 'retweet_ratio' (from the raw column of the same name) -- no rename needed,
     # it's included here for symmetry/clarity with dataset 2's rename below.
     X = X24.join(Xe[COMMON_EXTRA_COLS])
-    X = X.replace([np.inf, -np.inf], np.nan).fillna(X.median(numeric_only=True))
+    X = X.replace([np.inf, -np.inf],
+                  np.nan).fillna(X.median(numeric_only=True))
     y = df["bot"].values
     return X, y
 
@@ -88,9 +89,11 @@ def build_dataset2_matrix():
     df["bot"] = df["bot"].astype(int)
     ref_date = datetime(2026, 1, 1, tzinfo=timezone.utc)
     X24 = engineer_behavioral_features(df, ref_date=ref_date)
-    Xe = engineer_extra_features_v2(df).rename(columns={'retweet_ratio_approx': 'retweet_ratio'})
+    Xe = engineer_extra_features_d2(df).rename(
+        columns={'retweet_ratio_approx': 'retweet_ratio'})
     X = X24.join(Xe[COMMON_EXTRA_COLS])
-    X = X.replace([np.inf, -np.inf], np.nan).fillna(X.median(numeric_only=True))
+    X = X.replace([np.inf, -np.inf],
+                  np.nan).fillna(X.median(numeric_only=True))
     y = df["bot"].values
     return X, y
 
@@ -120,22 +123,27 @@ print(f"Common feature columns ({len(common_cols)}): {common_cols}")
 results = []
 
 # A) Train on dataset 1 -> test on dataset 2
-clf_A = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1, class_weight='balanced')
+clf_A = RandomForestClassifier(
+    n_estimators=300, random_state=RNG, n_jobs=-1, class_weight='balanced')
 clf_A.fit(X1.values, y1)
 proba_A = clf_A.predict_proba(X2.values)[:, 1]
 m = metrics(y2, proba_A)
-m.update({'direction': 'Train=D1 -> Test=D2', 'n_train': len(y1), 'n_test': len(y2)})
+m.update({'direction': 'Train=D1 -> Test=D2',
+         'n_train': len(y1), 'n_test': len(y2)})
 results.append(m)
 
 # B) Train on dataset 2 -> test on dataset 1
-clf_B = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1, class_weight='balanced')
+clf_B = RandomForestClassifier(
+    n_estimators=300, random_state=RNG, n_jobs=-1, class_weight='balanced')
 clf_B.fit(X2.values, y2)
 proba_B = clf_B.predict_proba(X1.values)[:, 1]
 m = metrics(y1, proba_B)
-m.update({'direction': 'Train=D2 -> Test=D1', 'n_train': len(y2), 'n_test': len(y1)})
+m.update({'direction': 'Train=D2 -> Test=D1',
+         'n_train': len(y2), 'n_test': len(y1)})
 results.append(m)
 
-table = pd.DataFrame(results)[['direction', 'n_train', 'n_test', 'accuracy', 'f1', 'precision', 'recall', 'roc_auc']]
+table = pd.DataFrame(results)[['direction', 'n_train', 'n_test',
+                               'accuracy', 'f1', 'precision', 'recall', 'roc_auc']]
 print("\nCross-dataset generalization results:")
 print(table.to_string(index=False))
 

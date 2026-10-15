@@ -49,5 +49,5 @@
       "users_with_text": 1099
     }
   },
-  "legacy_results_note": "results_custom and results_dataset2 predate fold-local preprocessing; retain as historical outputs, not official corrected results."
+  "legacy_results_note": "results_legacy_d1 and results_legacy_d2 predate fold-local preprocessing; retain as historical outputs, not official corrected results."
 }

@@ -11,7 +11,7 @@ RF_PARAMS = {
     "class_weight": None,
 }
 ROOT = Path(__file__).resolve().parents[1]
-DATASET1_PATH = ROOT / "datasets" / "main_with_final_tag_Customized.xlsx"
-DATASET2_PATH = ROOT / "datasets" / "all_users_Customized.xlsx"
-OFFICIAL_RESULTS = ROOT / "results_official"
+DATASET1_PATH = ROOT / "datasets" / "dataset1.xlsx"
+DATASET2_PATH = ROOT / "datasets" / "dataset2.xlsx"
+OFFICIAL_RESULTS = ROOT / "results_main"
 THRESHOLD_GRID = tuple(round(x / 100, 2) for x in range(5, 96, 5))

@@ -5,9 +5,23 @@ Run from the repository root:
 
 This script writes only under results_semantic/ and leaves existing scripts/results
 untouched. It reuses the project's existing dataset loader, feature engineering,
-configuration, and leakage-safe nested-CV evaluation utilities.
+configuration, and leakage-safe nested-CV nested_cv utilities.
 """
 from __future__ import annotations
+from data_audit import audit_dataset1
+from load_dataset1 import load_custom_v2 as load_custom
+from semantic_features import DEFAULT_MODEL_NAME, engineer_semantic_features
+from features import engineer_behavioral_features, engineer_content_features
+from extra_features_d1 import engineer_extra_features
+from nested_cv import nested_cv_evaluate
+from experiment_config import (
+    DATASET1_PATH, INNER_SPLITS, OUTER_SPLITS, RF_PARAMS, SEED, THRESHOLD_GRID
+)
+from sklearn.metrics import PrecisionRecallDisplay, RocCurveDisplay
+from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 import argparse
 import hashlib
@@ -17,21 +31,7 @@ from datetime import datetime, timezone
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import PrecisionRecallDisplay, RocCurveDisplay
 
-from experiment_config import (
-    DATASET1_PATH, INNER_SPLITS, OUTER_SPLITS, RF_PARAMS, SEED, THRESHOLD_GRID
-)
-from evaluation import nested_cv_evaluate
-from extra_features import engineer_extra_features
-from features import engineer_behavioral_features, engineer_content_features
-from features_semantic import DEFAULT_MODEL_NAME, engineer_semantic_features
-from load_custom_dataset_v2 import load_custom_v2 as load_custom
-from validation import audit_dataset1
 
 ROOT_RESULTS = Path(__file__).resolve().parent.parent / "results_semantic"
 
@@ -78,7 +78,8 @@ def evaluate_one(experiment, model_name, X, y):
 def save_plots(predictions, y, output_dir):
     fig, ax = plt.subplots(figsize=(7, 6))
     for label, pred in predictions.items():
-        RocCurveDisplay.from_predictions(y, pred["probability_bot"], name=label, ax=ax)
+        RocCurveDisplay.from_predictions(
+            y, pred["probability_bot"], name=label, ax=ax)
     ax.set_title("Nested-CV out-of-fold ROC curves — semantic experiments")
     fig.tight_layout()
     fig.savefig(output_dir / "semantic_roc.png", dpi=160)
@@ -86,8 +87,10 @@ def save_plots(predictions, y, output_dir):
 
     fig, ax = plt.subplots(figsize=(7, 6))
     for label, pred in predictions.items():
-        PrecisionRecallDisplay.from_predictions(y, pred["probability_bot"], name=label, ax=ax)
-    ax.set_title("Nested-CV out-of-fold precision-recall curves — semantic experiments")
+        PrecisionRecallDisplay.from_predictions(
+            y, pred["probability_bot"], name=label, ax=ax)
+    ax.set_title(
+        "Nested-CV out-of-fold precision-recall curves — semantic experiments")
     fig.tight_layout()
     fig.savefig(output_dir / "semantic_pr.png", dpi=160)
     plt.close(fig)
@@ -116,7 +119,8 @@ def run_d1():
     matched_behavioral = engineer_behavioral_features(
         matched, ref_date=datetime(2025, 1, 1, tzinfo=timezone.utc)
     )
-    matched_extended = matched_behavioral.join(engineer_extra_features(matched))
+    matched_extended = matched_behavioral.join(
+        engineer_extra_features(matched))
     matched_content = engineer_content_features(matched)
     matched_semantic = engineer_semantic_features(matched, cache_dir=cache_dir)
 
@@ -174,7 +178,7 @@ def run_d1():
         "rf_params": RF_PARAMS,
         "audit": audit,
         "notes": [
-            "This additive runner does not modify the existing official runner or evaluation.py.",
+            "This additive runner does not modify the existing official runner or nested_cv.py.",
             "All models are evaluated on the same matched subset.",
             "The pretrained semantic encoder is frozen; only the classifier is evaluated with nested CV.",
             "Embedding cache is keyed by model name and ordered text content.",

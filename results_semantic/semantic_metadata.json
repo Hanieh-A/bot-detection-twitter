@@ -1,6 +1,6 @@
 {
   "created_utc": "2026-10-15T09:14:35.095445+00:00",
-  "dataset": "D:\\University\\Term8\\Final-project\\bot-detection-twitter\\datasets\\main_with_final_tag_Customized.xlsx",
+  "dataset": "D:\\University\\Term8\\Final-project\\bot-detection-twitter\\datasets\\dataset1.xlsx",
   "dataset_sha256": "17562c3857b482952f0985f90f51d2101662c27edda9f24ae86b106be29de56c",
   "semantic_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "semantic_dimension": 384,
@@ -45,7 +45,7 @@
     "users_with_text": 1099
   },
   "notes": [
-    "This additive runner does not modify the existing official runner or evaluation.py.",
+    "This additive runner does not modify the existing official runner or nested_cv.py.",
     "All models are evaluated on the same matched subset.",
     "The pretrained semantic encoder is frozen; only the classifier is evaluated with nested CV.",
     "Embedding cache is keyed by model name and ordered text content."

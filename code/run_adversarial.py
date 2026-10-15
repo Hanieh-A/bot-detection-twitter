@@ -30,11 +30,23 @@ empirical finding. This should be stated plainly when presenting results.
 
 Because content features require tweet text, this experiment necessarily
 runs on the ~162-174 user subset that has sampled text (same subset as
-the earlier RF-Content / RF-Fusion experiments in run_analysis_custom.py).
+the earlier RF-Content / RF-Fusion experiments in run_analysis_dataset1.py).
 
 Usage:
     python3 run_adversarial.py /path/to/users_with_retweets.xlsx
 """
+from extra_features_d1 import engineer_extra_features, EXTRA_FEATURE_NAMES
+from load_dataset1 import load_custom_v2 as load_custom
+from features import engineer_all, engineer_behavioral_features
+from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from datetime import datetime, timezone
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib
+import pandas as pd
+import numpy as np
 import os
 import sys
 import re
@@ -42,28 +54,15 @@ import json
 import warnings
 warnings.filterwarnings('ignore')
 
-import numpy as np
-import pandas as pd
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
-from datetime import datetime, timezone
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, accuracy_score
-
-from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset_v2 import load_custom_v2 as load_custom
-from extra_features import engineer_extra_features, EXTRA_FEATURE_NAMES
 
 RNG = 42
 np.random.seed(RNG)
 
 XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "results_custom")
+OUT = os.path.join(ROOT, "results_legacy_d1")
 os.makedirs(OUT, exist_ok=True)
 REF_DATE = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
@@ -76,17 +75,20 @@ def llm_style_rewrite(text, target_stats, rng):
         return text
     s = text
     urls = re.findall(r'https?://\S+', s)
-    human_url_count = max(0, int(round(target_stats['url_mean'] + rng.normal(0, target_stats['url_std']))))
+    human_url_count = max(0, int(
+        round(target_stats['url_mean'] + rng.normal(0, target_stats['url_std']))))
     if len(urls) > human_url_count:
         for u in urls[human_url_count:]:
             s = s.replace(u, '', 1)
     hashtags = re.findall(r'#\w+', s)
-    human_ht_count = max(0, int(round(target_stats['hashtag_mean'] + rng.normal(0, target_stats['hashtag_std']))))
+    human_ht_count = max(0, int(round(
+        target_stats['hashtag_mean'] + rng.normal(0, target_stats['hashtag_std']))))
     if len(hashtags) > human_ht_count:
         for h in hashtags[human_ht_count:]:
             s = s.replace(h, '', 1)
     mentions = re.findall(r'@\w+', s)
-    human_mention_count = max(0, int(round(target_stats['mention_mean'] + rng.normal(0, target_stats['mention_std']))))
+    human_mention_count = max(0, int(round(
+        target_stats['mention_mean'] + rng.normal(0, target_stats['mention_std']))))
     if len(mentions) > human_mention_count:
         for m in mentions[human_mention_count:]:
             s = s.replace(m, '', 1)
@@ -135,19 +137,24 @@ target_stats = compute_human_text_stats(X_train_df)
 
 def build_features(df):
     X_all, behav_cols, content_cols = engineer_all(df)
-    X_all = engineer_behavioral_features(df, ref_date=REF_DATE).join(X_all[content_cols])
+    X_all = engineer_behavioral_features(
+        df, ref_date=REF_DATE).join(X_all[content_cols])
     X_extra = engineer_extra_features(df)
     X_all = X_all.join(X_extra)
     behav_cols = behav_cols + EXTRA_FEATURE_NAMES
-    X_all = X_all.replace([np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
+    X_all = X_all.replace(
+        [np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
     return X_all, behav_cols, content_cols
 
 
 X_train_feat, behav_cols, content_cols = build_features(X_train_df)
 
-rf_content = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1)
-rf_behav = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1)
-rf_fusion = RandomForestClassifier(n_estimators=300, random_state=RNG, n_jobs=-1)
+rf_content = RandomForestClassifier(
+    n_estimators=300, random_state=RNG, n_jobs=-1)
+rf_behav = RandomForestClassifier(
+    n_estimators=300, random_state=RNG, n_jobs=-1)
+rf_fusion = RandomForestClassifier(
+    n_estimators=300, random_state=RNG, n_jobs=-1)
 rf_content.fit(X_train_feat[content_cols].values, y_train)
 rf_behav.fit(X_train_feat[behav_cols].values, y_train)
 rf_fusion.fit(X_train_feat[behav_cols + content_cols].values, y_train)
@@ -186,17 +193,21 @@ print(table6.to_string(index=False))
 # ============================================================
 sns.set_style("whitegrid")
 fig, ax = plt.subplots(figsize=(7.5, 6))
-colors = {'RF-Content': '#e34a33', 'RF-Behavioral': '#2b8cbe', 'RF-Fusion': '#31a354'}
+colors = {'RF-Content': '#e34a33',
+          'RF-Behavioral': '#2b8cbe', 'RF-Fusion': '#31a354'}
 for name in ['RF-Content', 'RF-Behavioral', 'RF-Fusion']:
     sub = table6[table6['model'] == name]
-    ax.plot(sub['severity'], sub['roc_auc'], marker='o', lw=2.5, label=name, color=colors[name])
+    ax.plot(sub['severity'], sub['roc_auc'], marker='o',
+            lw=2.5, label=name, color=colors[name])
 ax.set_xlabel('Laundering severity (fraction of test users rewritten)')
 ax.set_ylabel('ROC-AUC')
-ax.set_title('Adversarial robustness: AUC vs. LLM text-laundering severity', fontweight='bold')
+ax.set_title(
+    'Adversarial robustness: AUC vs. LLM text-laundering severity', fontweight='bold')
 ax.set_ylim(0.4, 1.0)
 ax.legend(loc='lower left')
 plt.tight_layout()
-plt.savefig(f'{OUT}/fig10_adversarial_robustness.png', dpi=150, bbox_inches='tight')
+plt.savefig(f'{OUT}/fig10_adversarial_robustness.png',
+            dpi=150, bbox_inches='tight')
 plt.close()
 
 auc_drop = {}

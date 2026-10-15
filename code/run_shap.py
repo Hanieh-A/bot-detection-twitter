@@ -5,7 +5,7 @@ Roadmap step 2: SHAP-based interpretability for the final recommended
 model: RF-Behavioral, 45 features (24 from Katyal 2026 + 21 extra),
 unweighted, decision threshold 0.39 (see run_imbalance.py).
 
-Produces (in ../results_custom/):
+Produces (in ../results_legacy_d1/):
   - fig6_shap_summary_beeswarm.png   -- global view: direction + magnitude
   - fig7_shap_bar_importance.png     -- mean |SHAP| ranking (top 15)
   - fig8_shap_dependence_<feat>.png  -- how top-2 features drive the prediction
@@ -17,25 +17,24 @@ Produces (in ../results_custom/):
 Usage:
     python3 run_shap.py /path/to/users_with_retweets.xlsx
 """
+from extra_features_d1 import engineer_extra_features, EXTRA_FEATURE_NAMES
+from load_dataset1 import load_custom_v2 as load_custom
+from features import engineer_all, engineer_behavioral_features
+from sklearn.ensemble import RandomForestClassifier
+from datetime import datetime, timezone
+import shap
+import matplotlib.pyplot as plt
+import matplotlib
+import pandas as pd
+import numpy as np
 import os
 import sys
 import json
 import warnings
 warnings.filterwarnings('ignore')
 
-import numpy as np
-import pandas as pd
-import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import shap
 
-from datetime import datetime, timezone
-from sklearn.ensemble import RandomForestClassifier
-
-from features import engineer_all, engineer_behavioral_features
-from load_custom_dataset_v2 import load_custom_v2 as load_custom
-from extra_features import engineer_extra_features, EXTRA_FEATURE_NAMES
 
 RNG = 42
 np.random.seed(RNG)
@@ -43,7 +42,7 @@ THRESHOLD = 0.39  # chosen in run_imbalance.py (best F1)
 
 XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "results_custom")
+OUT = os.path.join(ROOT, "results_legacy_d1")
 os.makedirs(OUT, exist_ok=True)
 REF_DATE = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
@@ -55,11 +54,13 @@ df_labeled = df_raw.dropna(subset=["bot"]).copy()
 df_labeled["bot"] = df_labeled["bot"].astype(int)
 
 X_all, behav_cols, content_cols = engineer_all(df_labeled)
-X_all = engineer_behavioral_features(df_labeled, ref_date=REF_DATE).join(X_all[content_cols])
+X_all = engineer_behavioral_features(
+    df_labeled, ref_date=REF_DATE).join(X_all[content_cols])
 X_extra = engineer_extra_features(df_labeled)
 X_all = X_all.join(X_extra)
 behav_cols = behav_cols + EXTRA_FEATURE_NAMES
-X_all = X_all.replace([np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
+X_all = X_all.replace(
+    [np.inf, -np.inf], np.nan).fillna(X_all.median(numeric_only=True))
 
 X_df = X_all[behav_cols].copy()
 y = df_labeled["bot"].values
@@ -82,7 +83,8 @@ sv = explainer(X_df)
 if sv.values.ndim == 3:
     sv_bot = shap.Explanation(
         values=sv.values[:, :, 1],
-        base_values=sv.base_values[:, 1] if np.ndim(sv.base_values) > 1 else sv.base_values,
+        base_values=sv.base_values[:, 1] if np.ndim(
+            sv.base_values) > 1 else sv.base_values,
         data=sv.data,
         feature_names=sv.feature_names,
     )
@@ -94,9 +96,11 @@ else:
 # ============================================================
 plt.figure(figsize=(9, 7))
 shap.summary_plot(sv_bot, X_df, max_display=15, show=False)
-plt.title("SHAP summary -- what drives the bot prediction", fontsize=12, fontweight='bold')
+plt.title("SHAP summary -- what drives the bot prediction",
+          fontsize=12, fontweight='bold')
 plt.tight_layout()
-plt.savefig(f'{OUT}/fig6_shap_summary_beeswarm.png', dpi=150, bbox_inches='tight')
+plt.savefig(f'{OUT}/fig6_shap_summary_beeswarm.png',
+            dpi=150, bbox_inches='tight')
 plt.close()
 
 # ============================================================
@@ -111,10 +115,12 @@ print(table5.head(15).to_string(index=False))
 
 plt.figure(figsize=(9, 7))
 shap.summary_plot(sv_bot, X_df, plot_type="bar", max_display=15, show=False)
-plt.title("Mean |SHAP value| -- top 15 behavioral features", fontsize=12, fontweight='bold')
+plt.title("Mean |SHAP value| -- top 15 behavioral features",
+          fontsize=12, fontweight='bold')
 plt.xlabel("mean(|SHAP value|)")
 plt.tight_layout()
-plt.savefig(f'{OUT}/fig7_shap_bar_importance.png', dpi=150, bbox_inches='tight')
+plt.savefig(f'{OUT}/fig7_shap_bar_importance.png',
+            dpi=150, bbox_inches='tight')
 plt.close()
 
 # ============================================================
@@ -123,11 +129,13 @@ plt.close()
 top2 = table5['feature'].head(2).tolist()
 for feat in top2:
     plt.figure(figsize=(7.5, 6))
-    shap.dependence_plot(feat, sv_bot.values, X_df, show=False, interaction_index=None)
+    shap.dependence_plot(feat, sv_bot.values, X_df,
+                         show=False, interaction_index=None)
     plt.title(f"SHAP dependence -- {feat}", fontsize=12, fontweight='bold')
     plt.tight_layout()
     safe_name = feat.replace('/', '_')
-    plt.savefig(f'{OUT}/fig8_shap_dependence_{safe_name}.png', dpi=150, bbox_inches='tight')
+    plt.savefig(f'{OUT}/fig8_shap_dependence_{safe_name}.png',
+                dpi=150, bbox_inches='tight')
     plt.close()
 
 # ============================================================
@@ -148,7 +156,8 @@ if len(bot_correct_idx) > 0:
     plt.title(f"Why flagged as bot: @{screen_names[best_bot_i]} (p={proba_bot[best_bot_i]:.2f})",
               fontsize=11, fontweight='bold')
     plt.tight_layout()
-    plt.savefig(f'{OUT}/fig9_shap_waterfall_bot_example.png', dpi=150, bbox_inches='tight')
+    plt.savefig(f'{OUT}/fig9_shap_waterfall_bot_example.png',
+                dpi=150, bbox_inches='tight')
     plt.close()
 
 if len(human_correct_idx) > 0:
@@ -158,7 +167,8 @@ if len(human_correct_idx) > 0:
     plt.title(f"Why cleared as human: @{screen_names[best_human_i]} (p={proba_bot[best_human_i]:.2f})",
               fontsize=11, fontweight='bold')
     plt.tight_layout()
-    plt.savefig(f'{OUT}/fig9_shap_waterfall_human_example.png', dpi=150, bbox_inches='tight')
+    plt.savefig(f'{OUT}/fig9_shap_waterfall_human_example.png',
+                dpi=150, bbox_inches='tight')
     plt.close()
 
 # ============================================================

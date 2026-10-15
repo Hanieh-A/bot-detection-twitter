@@ -14,10 +14,10 @@
   "botometer_standalone_AUC": 0.5226641923696913,
   "n_users_with_botometer_and_label": 1320,
   "paper2_fusion_dataset2": {
-    "n_users_with_text": 1620,
-    "n_bots": 753,
-    "RF_Behavioral_AUC": 0.7402929319196263,
-    "RF_Linguistic_AUC": 0.6146516179060363,
-    "RF_Fusion_AUC": 0.738663064785029
+    "n_users_with_text": 4722,
+    "n_bots": 1921,
+    "RF_Behavioral_AUC": 0.9406678788229307,
+    "RF_Linguistic_AUC": 0.7265873731358073,
+    "RF_Fusion_AUC": 0.9362880472264663
   }
 }

@@ -1,5 +1,5 @@
 """
-extra_features.py
+extra_features_d1.py
 ------------------
 Engineers the behavioral signals that exist in the student's own dataset
 but were NOT part of the original Katyal (2026) feature set. This is the
@@ -41,7 +41,8 @@ def engineer_extra_features(df):
     out = pd.DataFrame(index=df.index)
 
     # --- composition of tweet types (proportions, not raw counts) ---
-    type_cols = ['no_type_tweet', 'no_type_retweet_with_comment', 'no_type_reply', 'no_retweet_tweets']
+    type_cols = ['no_type_tweet', 'no_type_retweet_with_comment',
+                 'no_type_reply', 'no_retweet_tweets']
     total_typed = df[type_cols].sum(axis=1).replace(0, np.nan)
     out['prop_original_tweet'] = df['no_type_tweet'] / total_typed
     out['prop_retweet_with_comment'] = df['no_type_retweet_with_comment'] / total_typed
@@ -73,7 +74,8 @@ def engineer_extra_features(df):
 
     # --- bot-farm-style signal: tweeted immediately after account creation ---
     out['tweeted_on_creation_day_or_week'] = (
-        (df['no_tweets_on_creation_day'] > 0) | (df['no_tweets_on_creation_week'] > 0)
+        (df['no_tweets_on_creation_day'] > 0) | (
+            df['no_tweets_on_creation_week'] > 0)
     ).astype(int)
 
     out = out.replace([np.inf, -np.inf], np.nan)

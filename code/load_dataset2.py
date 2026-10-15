@@ -27,8 +27,8 @@ import pandas as pd
 # columns from the "main" sheet this dataset actually has, usable as
 # extra (paper-1-style) behavioral signal beyond the original 24 features.
 # (No retweet_ratio / no_tweets_on_creation_day|week / listed_growth_rate
-# here, unlike dataset 1 -- so extra_features.py from dataset 1 can't be
-# reused as-is; see extra_features_v2.py.)
+# here, unlike dataset 1 -- so extra_features_d1.py from dataset 1 can't be
+# reused as-is; see extra_features_d2.py.)
 EXTRA_RAW_COLS_V2 = [
     'tweet_frequency', 'mean_no_hashtags', 'mean_no_words', 'time_between_tweets',
     'mean_user_mentions_per_tweet', 'unique_mention_rate_per_tweet',
@@ -77,7 +77,7 @@ def load_dataset2(xlsx_path):
            - 'botometer_score': normalized 0-1 (independent tool, NOT used to
                                  derive 'bot' -- kept separate to avoid circularity)
       extra_raw_cols : list of raw column names (EXTRA_RAW_COLS_V2) present,
-                       to be fed into extra_features_v2.engineer_extra_features_v2
+                       to be fed into extra_features_d2.engineer_extra_features_d2
     """
     main = pd.read_excel(xlsx_path, sheet_name="main")
     suspended = pd.read_excel(xlsx_path, sheet_name="suspend_users")
@@ -137,7 +137,7 @@ def load_dataset2(xlsx_path):
 
 if __name__ == "__main__":
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else "all_users_Customized.xlsx"
+    path = sys.argv[1] if len(sys.argv) > 1 else "dataset2.xlsx"
     df, extra_cols = load_dataset2(path)
     print(df.shape)
     print("label_source counts:\n",

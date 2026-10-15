@@ -16,7 +16,7 @@ import pandas as pd
 
 # authoritative resolved label, e.g. "bot(1)"
 FINAL_LABEL_COL = "final-tag"
-DATASET = "../datasets/main_with_final_tag_Customized.xlsx"
+DATASET = "../datasets/dataset1.xlsx"
 
 
 def _parse_final_label(v):
