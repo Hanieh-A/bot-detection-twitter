@@ -1,0 +1,7 @@
+{
+  "model_name": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "rows": 30627,
+  "dimension": 384,
+  "normalized": true,
+  "cache_key": "42a2a5bed1681e779a734c4e"
+}

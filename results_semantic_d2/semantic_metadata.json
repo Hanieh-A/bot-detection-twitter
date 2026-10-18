@@ -1,0 +1,87 @@
+{
+  "created_utc": "2026-10-18T08:25:19.135759+00:00",
+  "dataset": "D:\\University\\Term8\\Final-project\\bot-detection-twitter\\datasets\\dataset2.xlsx",
+  "dataset_sha256": "4802c96e5bcd9ae1353a61fd2e861b71b5a220322b2d6e8dd4be92ce991f1263",
+  "semantic_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "text_mode": "mean",
+  "max_tweets_per_user": 10,
+  "min_tweets_per_user": 1,
+  "lang_filter": null,
+  "tagger_only": false,
+  "id_tolerance": 5,
+  "id_tolerance_min_len": 15,
+  "n_tweet_ids_fuzzy_matched": 4226,
+  "n_users_with_tweets_all": 4599,
+  "ref_date": "2025-04-01",
+  "n_labeled_rows": 19510,
+  "n_matched_text_rows": 4599,
+  "matched_class_counts": {
+    "human": 2729,
+    "bot": 1870
+  },
+  "label_source_counts_matched": {
+    "tagger": 4506,
+    "tagger(human)+suspended_conflict": 56,
+    "tagger+suspended": 37
+  },
+  "sampled_tweet_lang_counts": {
+    "fa": 19535,
+    "en": 4481,
+    "qme": 4019,
+    "ar": 876,
+    "qht": 742,
+    "und": 485,
+    "in": 132,
+    "de": 96
+  },
+  "seed": 42,
+  "outer_splits": 5,
+  "inner_splits": 4,
+  "threshold_grid": [
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95
+  ],
+  "rf_params": {
+    "n_estimators": 300,
+    "random_state": 42,
+    "n_jobs": -1,
+    "class_weight": null
+  },
+  "audit": {
+    "required_columns_missing": [],
+    "rows": 19510,
+    "resolved_labels": 19510,
+    "label_source_counts": {
+      "tagger": 19212,
+      "tagger(human)+suspended_conflict": 256,
+      "tagger+suspended": 42
+    },
+    "duplicate_id_str": 0,
+    "duplicate_normalized_screen_name": 74
+  },
+  "notes": [
+    "Additive runner: existing scripts, nested_cv.py and D1 results are untouched.",
+    "Tweets joined to users by numeric user id (text-read, tolerance on last digits), not screen_name.",
+    "Botometer score is not used as a feature.",
+    "Labels are Bot_Probability >= 0.5 (+ suspended accounts); labels near 0.5 are noisy.",
+    "One row per user, so ordinary stratified nested CV has no user-level leakage.",
+    "The semantic encoder is frozen; only the classifier is evaluated with nested CV."
+  ]
+}
