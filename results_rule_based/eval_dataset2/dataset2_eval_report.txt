@@ -1,0 +1,19 @@
+گزارش ارزیابی — dataset2
+تاریخ: 2026-10-19 18:31:22
+کل رکوردها: 19510  |  قابل ارزیابی: 19510
+==================================================
+Accuracy    : 0.0379 (3.79%)
+Macro F1    : 0.0366
+Weighted F1 : 0.0198
+
+Classification Report:
+              precision    recall  f1-score   support
+
+         Bot       0.10      0.29      0.14      2486
+       Human       1.00      0.00      0.00     17024
+  News Agent       0.00      0.00      0.00         0
+  Unverified       0.00      0.00      0.00         0
+
+    accuracy                           0.04     19510
+   macro avg       0.27      0.07      0.04     19510
+weighted avg       0.88      0.04      0.02     19510

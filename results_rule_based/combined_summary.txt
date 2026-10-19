@@ -1,0 +1,23 @@
+خلاصه ترکیبی دیتاست‌ها
+تاریخ: 2026-10-19 18:31:23
+
+--- dataset1 (1103 رکورد) ---
+predicted_label
+Human         390
+Unverified    374
+News Agent    246
+Bot            49
+Likely Bot     44
+
+--- dataset2 (19510 رکورد) ---
+predicted_label
+Unverified    11954
+Bot            6212
+Likely Bot     1330
+Human            13
+News Agent        1
+
+==================================================
+خلاصه ارزیابی:
+dataset1: Accuracy=34.18%  MacroF1=0.252  WeightedF1=0.412
+dataset2: Accuracy=3.79%  MacroF1=0.037  WeightedF1=0.020
