@@ -9,5 +9,15 @@
   "RF_Behavioral_paper_only_AUC": 0.7018801518529779,
   "GB_Behavioral_AUC": 0.7862043512043512,
   "RF_Content_subset_AUC": 0.7271514023539986,
-  "RF_Fusion_subset_AUC": 0.8211182484453169
+  "RF_Fusion_subset_AUC": 0.8211182484453169,
+  "shap_interpretability": {
+    "top5_features_by_mean_abs_shap": [
+      "log_statuses",
+      "statuses_per_day",
+      "retweet_ratio",
+      "log_max_tweets_per_day",
+      "prop_plain_retweet"
+    ],
+    "model": "RF-Behavioral, 45 features, unweighted, threshold=0.39"
+  }
 }

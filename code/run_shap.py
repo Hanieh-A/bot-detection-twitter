@@ -40,7 +40,7 @@ RNG = 42
 np.random.seed(RNG)
 THRESHOLD = 0.39  # chosen in run_imbalance.py (best F1)
 
-XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
+XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "../datasets/dataset1.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results_legacy_d1")
 os.makedirs(OUT, exist_ok=True)
