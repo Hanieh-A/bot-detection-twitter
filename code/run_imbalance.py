@@ -46,7 +46,7 @@ RNG = 42
 np.random.seed(RNG)
 N_SPLITS = 5
 
-XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "1000user_sheet.xlsx"
+XLSX_PATH = sys.argv[1] if len(sys.argv) > 1 else "../datasets/dataset1.xlsx"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results_legacy_d1")
 os.makedirs(OUT, exist_ok=True)

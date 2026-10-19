@@ -19,5 +19,13 @@
       "prop_plain_retweet"
     ],
     "model": "RF-Behavioral, 45 features, unweighted, threshold=0.39"
+  },
+  "imbalance_handling": {
+    "best_config": "Threshold tuning (unweighted, thr=0.337)",
+    "best_threshold": 0.33666666666666667,
+    "baseline_f1": 0.22916666666666666,
+    "best_f1": 0.47244094488188976,
+    "baseline_recall": 0.14285714285714285,
+    "best_recall": 0.38961038961038963
   }
 }
