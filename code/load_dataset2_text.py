@@ -26,18 +26,6 @@ def _normalize(text):
 
 
 def load_all_tweets(xlsx_path, cache_pickle=None):
-    """Combines tweetsMetaData_1 + tweetsMetaData_2 into one DataFrame
-    with columns: screen_name, tweet_id (str), text. Deduplicates exact
-    repeated (screen_name, tweet_id) rows that might appear in both sheets.
-    NOTE: joins on screen_name rather than the numeric 'id' column --
-    the 'main' sheet stores 'id' as float64, which silently loses
-    precision for Twitter's 19-digit snowflake IDs (float64 can only
-    exactly represent integers up to ~9e15), while the tweet sheets store
-    it as int64. This makes numeric-id joins between 'main' and the tweet
-    sheets unreliable; screen_name (a string) has no such precision issue.
-    If cache_pickle is given and exists, loads from there instead of
-    re-reading the (slow) xlsx sheets; otherwise computes and, if a path
-    is given, saves the cache for next time."""
     import os
     if cache_pickle and os.path.exists(cache_pickle):
         return pd.read_pickle(cache_pickle)
@@ -46,12 +34,16 @@ def load_all_tweets(xlsx_path, cache_pickle=None):
     for sheet in ["tweetsMetaData_1", "tweetsMetaData_2"]:
         raw = pd.read_excel(xlsx_path, sheet_name=sheet)
         frames.append(pd.DataFrame({
-            "screen_name": raw["screen_name"].astype(str).str.strip().str.lower(),
-            "tweet_id": raw["id.1"].astype(str),
+            "user_id": raw["id"].astype("Int64"),          # ← user id
+            "tweet_id": raw["id.1"].astype(str),            # ← tweet id
+            "screen_name": raw["screen_name"].astype(str).str.lower().str.strip(),
             "text": raw["text"],
+            "lang": raw.get("lang"),
+            "type": raw.get("type"),
+            "published_at": raw.get("published_at"),
         }))
     tw = pd.concat(frames, ignore_index=True)
-    tw = tw.drop_duplicates(subset=["screen_name", "tweet_id"])
+    tw = tw.drop_duplicates(subset=["tweet_id"])            # ← بر اساس tweet_id نه هندل
     if cache_pickle:
         tw.to_pickle(cache_pickle)
     return tw
