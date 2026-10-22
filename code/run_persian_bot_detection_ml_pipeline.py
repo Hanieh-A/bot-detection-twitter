@@ -68,6 +68,8 @@ from sklearn.metrics import (
     average_precision_score,
     confusion_matrix,
     classification_report,
+    roc_curve,
+    precision_recall_curve,
 )
 
 import matplotlib
@@ -117,7 +119,7 @@ MIN_SAMPLES_PER_CLASS_FOR_STRATIFY = 2
 HAZM_POS_MODEL_PATH: Optional[str] = "pos_tagger.model"
 
 OUTPUT_DIR = Path("../results_ml_bot_detection")
-OUTPUT_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 FEATURES_CSV = OUTPUT_DIR / "user_text_features.csv"
 PREDICTIONS_CSV = OUTPUT_DIR / "ml_predictions.csv"
@@ -126,6 +128,12 @@ CLASSIFICATION_REPORT_TXT = OUTPUT_DIR / "classification_report.txt"
 CONFUSION_MATRIX_PNG = OUTPUT_DIR / "confusion_matrix.png"
 FEATURE_IMPORTANCE_CSV = OUTPUT_DIR / "feature_importance.csv"
 FEATURE_IMPORTANCE_PNG = OUTPUT_DIR / "feature_importance.png"
+METRICS_CSV = OUTPUT_DIR / "metrics_summary.csv"
+ROC_CURVE_PNG = OUTPUT_DIR / "roc_curve_random_forest.png"
+PR_CURVE_PNG = OUTPUT_DIR / "precision_recall_curve_random_forest.png"
+METRICS_COMPARISON_PNG = OUTPUT_DIR / "model_metrics_comparison.png"
+CLASS_DISTRIBUTION_PNG = OUTPUT_DIR / "class_distribution.png"
+CV_METRICS_PNG = OUTPUT_DIR / "cross_validation_metrics.png"
 
 POSITIVE_LABEL = "Bot"   # کلاس مثبت برای ROC-AUC / PR-AUC و گزارش‌ها
 
@@ -1006,7 +1014,131 @@ def run_pipeline():
             X_test)[:, pos_idx] if pos_idx is not None else None
     )
 
-    # ---------- 7) خروجی‌ها ----------
+    # ---------- 7) خروجی‌های متریک و نمودارهای تکمیلی ----------
+    # یک ردیف برای هر مدل روی test؛ برای Random Forest، میانگین و انحراف معیار CV هم ثبت می‌شود.
+    metric_rows = []
+    for model_name, model_result in results_by_model.items():
+        row = {"model": model_name, "split": "test"}
+        row.update(model_result["test_metrics"])
+        metric_rows.append(row)
+
+    if cv_metrics_rf:
+        for stat_name in ("mean", "std"):
+            row = {"model": "random_forest", "split": f"cv_{stat_name}"}
+            for metric_name, stats in cv_metrics_rf.items():
+                row[metric_name] = stats.get(stat_name)
+            row["n_samples"] = len(y_train)
+            metric_rows.append(row)
+
+    metrics_df = pd.DataFrame(metric_rows)
+    preferred_cols = [
+        "model", "split", "accuracy", "precision", "recall",
+        "roc_auc", "average_precision", "f1", "macro_f1", "n_samples"
+    ]
+    metrics_df = metrics_df[
+        [c for c in preferred_cols if c in metrics_df.columns]
+        + [c for c in metrics_df.columns if c not in preferred_cols]
+    ]
+    metrics_df.to_csv(METRICS_CSV, index=False, encoding="utf-8-sig")
+    print(f"[output] جدول متریک‌ها ذخیره شد: {METRICS_CSV}")
+
+    # نمودار ROC برای Random Forest (روی test مستقل)
+    y_test_bin = np.asarray([1 if v == POSITIVE_LABEL else 0 for v in y_test])
+    if y_score_primary is not None and len(np.unique(y_test_bin)) == 2:
+        fpr, tpr, _ = roc_curve(y_test_bin, y_score_primary)
+        test_roc_auc = roc_auc_score(y_test_bin, y_score_primary)
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.plot(fpr, tpr, label=f"Random Forest (AUC = {test_roc_auc:.3f})")
+        ax.plot([0, 1], [0, 1], linestyle="--", label="Chance")
+        ax.set_xlabel("False Positive Rate")
+        ax.set_ylabel("True Positive Rate")
+        ax.set_title("ROC Curve — held-out test set")
+        ax.legend(loc="lower right")
+        ax.grid(alpha=0.25)
+        fig.tight_layout()
+        fig.savefig(ROC_CURVE_PNG, dpi=180)
+        plt.close(fig)
+        print(f"[output] نمودار ROC ذخیره شد: {ROC_CURVE_PNG}")
+
+        precision_vals, recall_vals, _ = precision_recall_curve(
+            y_test_bin, y_score_primary)
+        test_ap = average_precision_score(y_test_bin, y_score_primary)
+        prevalence = float(np.mean(y_test_bin))
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.plot(recall_vals, precision_vals,
+                label=f"Random Forest (AP = {test_ap:.3f})")
+        ax.axhline(prevalence, linestyle="--",
+                   label=f"Bot prevalence = {prevalence:.3f}")
+        ax.set_xlabel("Recall")
+        ax.set_ylabel("Precision")
+        ax.set_title("Precision–Recall Curve — held-out test set")
+        ax.legend(loc="best")
+        ax.grid(alpha=0.25)
+        fig.tight_layout()
+        fig.savefig(PR_CURVE_PNG, dpi=180)
+        plt.close(fig)
+        print(f"[output] نمودار Precision-Recall ذخیره شد: {PR_CURVE_PNG}")
+    else:
+        print("[warning] نمودارهای ROC/PR ساخته نشدند؛ test باید هر دو کلاس را داشته باشد و امتیاز احتمال موجود باشد.")
+
+    # مقایسه‌ی متریک‌های اصلی دو مدل روی test
+    compare_metrics = ["accuracy", "precision",
+                       "recall", "roc_auc", "average_precision"]
+    plot_df = metrics_df[metrics_df["split"] == "test"].set_index("model")
+    available_metrics = [
+        m for m in compare_metrics if m in plot_df.columns and plot_df[m].notna().any()]
+    if available_metrics:
+        ax = plot_df[available_metrics].plot(
+            kind="bar", figsize=(10, 6), ylim=(0, 1))
+        ax.set_ylabel("Score")
+        ax.set_title("Model Comparison — held-out test set")
+        ax.set_xlabel("Model")
+        ax.grid(axis="y", alpha=0.25)
+        ax.legend(loc="best")
+        plt.xticks(rotation=0)
+        plt.tight_layout()
+        plt.savefig(METRICS_COMPARISON_PNG, dpi=180)
+        plt.close()
+        print(
+            f"[output] نمودار مقایسه‌ی متریک‌ها ذخیره شد: {METRICS_COMPARISON_PNG}")
+
+    # توزیع کلاس‌ها در مجموعه‌ی نهایی، train و test
+    dist_df = pd.DataFrame({
+        "all": pd.Series(y).value_counts(),
+        "train": pd.Series(y_train).value_counts(),
+        "test": pd.Series(y_test).value_counts(),
+    }).fillna(0).astype(int)
+    ax = dist_df.plot(kind="bar", figsize=(8, 5))
+    ax.set_ylabel("Number of users")
+    ax.set_xlabel("Class")
+    ax.set_title("Class Distribution")
+    ax.grid(axis="y", alpha=0.25)
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig(CLASS_DISTRIBUTION_PNG, dpi=180)
+    plt.close()
+    print(f"[output] نمودار توزیع کلاس‌ها ذخیره شد: {CLASS_DISTRIBUTION_PNG}")
+
+    # میانگین متریک‌های اعتبارسنجی متقاطع
+    if cv_metrics_rf:
+        cv_plot_df = pd.DataFrame({
+            metric: values["mean"]
+            for metric, values in cv_metrics_rf.items()
+            if values.get("mean") is not None
+        }, index=["Random Forest CV mean"])
+        if not cv_plot_df.empty:
+            ax = cv_plot_df.plot(kind="bar", figsize=(10, 5), ylim=(0, 1))
+            ax.set_ylabel("Score")
+            ax.set_title("Random Forest — Cross-validation Mean Metrics")
+            ax.set_xlabel("")
+            ax.grid(axis="y", alpha=0.25)
+            plt.xticks(rotation=0)
+            plt.tight_layout()
+            plt.savefig(CV_METRICS_PNG, dpi=180)
+            plt.close()
+            print(f"[output] نمودار متریک‌های CV ذخیره شد: {CV_METRICS_PNG}")
+
+    # ---------- 8) گزارش طبقه‌بندی و خروجی‌های موجود ----------
     report_txt = classification_report(y_test, y_pred_primary, digits=4)
     with open(CLASSIFICATION_REPORT_TXT, "w", encoding="utf-8") as f:
         f.write(
