@@ -1,0 +1,2 @@
+﻿dataset,experiment,label_column,n_users,n_bot,n_human,accuracy,precision,recall,roc_auc,ap,f1,median_selected_threshold
+d2,text_tfidf_char_d2,Predicted_Label,13586,2372,11214,0.8082585013984984,0.4665901921422426,0.6859190556492412,0.8239149050617587,0.5388148846815211,0.5553848779655232,0.2420857025613825

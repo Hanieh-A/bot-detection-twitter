@@ -1,0 +1,2 @@
+﻿dataset,experiment,label_column,n_users,n_bot,n_human,accuracy,precision,recall,roc_auc,ap,f1,median_selected_threshold
+d2,fusion_rf_word_d2,Predicted_Label,19295,2484,16811,0.9297227260948432,0.7039045553145337,0.783816425120773,0.96585899444147,0.8338774883777904,0.7417142857142857,0.3416666666666667
